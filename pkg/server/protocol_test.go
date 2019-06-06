@@ -31,17 +31,6 @@ func TestIncompleteLine(t *testing.T) {
 	}
 }
 
-func TestIllFormattedCommand(t *testing.T) {
-	input := bytes.NewBufferString("test\n")
-	output := bytes.Buffer{}
-
-	HandleProtocol(input, &output)
-
-	if !bytes.Equal(output.Bytes(), []byte("ill-formatted command")) {
-		t.Fatalf("Unexpected output: %s", output.Bytes())
-	}
-}
-
 func TestUnknownCommand(t *testing.T) {
 	input := bytes.NewBufferString("test \n")
 	output := bytes.Buffer{}
@@ -93,6 +82,17 @@ func TestCrLfLineEnding(t *testing.T) {
 	HandleProtocol(input, &output)
 
 	if !bytes.Equal(output.Bytes(), []byte("hello, world!\n")) {
+		t.Fatalf("Unexpected output: %s", output.Bytes())
+	}
+}
+
+func TestBye(t *testing.T) {
+	input := bytes.NewBufferString("echo a\nbye\n echo b\n")
+	output := bytes.Buffer{}
+
+	HandleProtocol(input, &output)
+
+	if !bytes.Equal(output.Bytes(), []byte("a\n")) {
 		t.Fatalf("Unexpected output: %s", output.Bytes())
 	}
 }

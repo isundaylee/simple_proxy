@@ -23,11 +23,16 @@ func HandleProtocol(reader io.Reader, writer io.Writer) {
 			panic("Failed to ReadBytes: " + err.Error())
 		}
 
+		var shouldTerminate bool
 		if command[len(command)-2] == '\r' {
 			command[len(command)-2] = '\n'
-			handleCommand(string(command[:len(command)-1]), writer)
+			shouldTerminate = handleCommand(string(command[:len(command)-1]), writer)
 		} else {
-			handleCommand(string(command), writer)
+			shouldTerminate = handleCommand(string(command), writer)
+		}
+
+		if shouldTerminate {
+			break
 		}
 	}
 }
@@ -39,24 +44,28 @@ func reply(writer io.Writer, content []byte) {
 	}
 }
 
-func handleCommand(command string, writer io.Writer) {
+func handleCommand(command string, writer io.Writer) bool {
 	spaceIndex := strings.Index(command, " ")
-	if spaceIndex == -1 {
-		reply(writer, []byte("ill-formatted command"))
-		return
-	}
 
-	op := command[:spaceIndex]
-	rest := command[spaceIndex+1:]
+	op := command[:len(command)-1]
+	rest := ""
+	if spaceIndex != -1 {
+		op = command[:spaceIndex]
+		rest = command[spaceIndex+1:]
+	}
 
 	switch op {
 	case "echo":
 		handlePing(rest, writer)
 	case "get":
 		handleGet(rest, writer)
+	case "bye":
+		return true
 	default:
 		reply(writer, []byte("unknown command"))
 	}
+
+	return false
 }
 
 func handlePing(rest string, writer io.Writer) {

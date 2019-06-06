@@ -27,6 +27,9 @@ func main() {
 			fmt.Printf("Error while accepting a client: %s\n", err.Error())
 		}
 
-		go server.HandleProtocol(conn, conn)
+		go func() {
+			server.HandleProtocol(conn, conn)
+			conn.Close()
+		}()
 	}
 }
