@@ -3,6 +3,7 @@ package server
 import (
 	"bufio"
 	"io"
+	"strings"
 )
 
 const readChunkSize = 128
@@ -21,9 +22,35 @@ func HandleProtocol(reader io.Reader, writer io.Writer) {
 			panic("Failed to ReadBytes: " + err.Error())
 		}
 
-		_, err = writer.Write(command)
-		if err != nil {
-			panic("Failed to Write: " + err.Error())
-		}
+		handleCommand(string(command), writer)
 	}
+}
+
+func reply(writer io.Writer, content []byte) {
+	_, err := writer.Write(content)
+	if err != nil {
+		panic("Failed to Write: " + err.Error())
+	}
+}
+
+func handleCommand(command string, writer io.Writer) {
+	spaceIndex := strings.Index(command, " ")
+	if spaceIndex == -1 {
+		reply(writer, []byte("ill-formatted command"))
+		return
+	}
+
+	op := command[:spaceIndex]
+	rest := command[spaceIndex+1:]
+
+	switch op {
+	case "echo":
+		handlePing(rest, writer)
+	default:
+		reply(writer, []byte("unknown command"))
+	}
+}
+
+func handlePing(rest string, writer io.Writer) {
+	reply(writer, []byte(rest))
 }
