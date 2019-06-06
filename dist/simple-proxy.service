@@ -11,4 +11,3 @@ Type=simple
 
 [Install]
 WantedBy=multi-user.target
-Alias=simple-proxy.service
