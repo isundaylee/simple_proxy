@@ -65,13 +65,17 @@ func TestGetOK(t *testing.T) {
 		}
 	}()
 
-	input := bytes.NewBufferString(fmt.Sprintf("get http://localhost:%d\n", port))
-	output := bytes.Buffer{}
+	ops := []string{"get", "sget"}
 
-	HandleProtocol(input, &output)
+	for _, op := range ops {
+		input := bytes.NewBufferString(fmt.Sprintf("%s http://localhost:%d\n", op, port))
+		output := bytes.Buffer{}
 
-	if !bytes.Equal(output.Bytes(), []byte("test-content")) {
-		t.Fatalf("Unexpected output: %s", output.Bytes())
+		HandleProtocol(input, &output)
+
+		if !bytes.Equal(output.Bytes(), []byte("test-content")) {
+			t.Fatalf("Unexpected output: %s", output.Bytes())
+		}
 	}
 }
 

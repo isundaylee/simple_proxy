@@ -63,7 +63,7 @@ func handleCommand(command string, writer io.Writer) bool {
 	switch op {
 	case "echo":
 		success = handlePing(rest, writer)
-	case "get":
+	case "get", "sget":
 		success = handleGet(rest, writer)
 	case "bye":
 		return true
