@@ -2,6 +2,7 @@ package server
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -20,7 +21,8 @@ func HandleProtocol(reader io.Reader, writer io.Writer) {
 			return
 		}
 		if err != nil {
-			panic("Failed to ReadBytes: " + err.Error())
+			fmt.Println("Failed to ReadBytes: " + err.Error())
+			return
 		}
 
 		var shouldTerminate bool
@@ -37,11 +39,14 @@ func HandleProtocol(reader io.Reader, writer io.Writer) {
 	}
 }
 
-func reply(writer io.Writer, content []byte) {
+func reply(writer io.Writer, content []byte) bool {
 	_, err := writer.Write(content)
 	if err != nil {
-		panic("Failed to Write: " + err.Error())
+		fmt.Println("Failed to Write: " + err.Error())
+		return false
 	}
+
+	return true
 }
 
 func handleCommand(command string, writer io.Writer) bool {
@@ -54,28 +59,30 @@ func handleCommand(command string, writer io.Writer) bool {
 		rest = command[spaceIndex+1:]
 	}
 
+	var success bool
 	switch op {
 	case "echo":
-		handlePing(rest, writer)
+		success = handlePing(rest, writer)
 	case "get":
-		handleGet(rest, writer)
+		success = handleGet(rest, writer)
 	case "bye":
 		return true
 	default:
-		reply(writer, []byte("unknown command"))
+		success = reply(writer, []byte("unknown command"))
 	}
 
-	return false
+	return !success
 }
 
-func handlePing(rest string, writer io.Writer) {
-	reply(writer, []byte(rest))
+func handlePing(rest string, writer io.Writer) bool {
+	return reply(writer, []byte(rest))
 }
 
-func handleGet(rest string, writer io.Writer) {
+func handleGet(rest string, writer io.Writer) bool {
 	resp, err := http.Get(rest[:len(rest)-1])
 	if err != nil {
-		panic("Failed to Get: " + err.Error())
+		fmt.Println("Failed to Get: " + err.Error())
+		return false
 	}
 
 	buf := make([]byte, httpGetReadChunkSize)
@@ -83,13 +90,14 @@ func handleGet(rest string, writer io.Writer) {
 	for {
 		n, err := resp.Body.Read(buf)
 		if err != nil && err != io.EOF {
-			panic("Failed to Read: " + err.Error())
+			fmt.Println("Failed to Read: " + err.Error())
+			return false
 		}
 
 		reply(writer, buf[:n])
 		if err == io.EOF {
 			resp.Body.Close()
-			return
+			return true
 		}
 	}
 }
