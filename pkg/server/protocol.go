@@ -3,10 +3,11 @@ package server
 import (
 	"bufio"
 	"io"
+	"net/http"
 	"strings"
 )
 
-const readChunkSize = 128
+const httpGetReadChunkSize = 1024
 
 // HandleProtocol handles the protocol part of a simple proxy connection. It
 // reads commands from reader, and writes output to writer.
@@ -46,6 +47,8 @@ func handleCommand(command string, writer io.Writer) {
 	switch op {
 	case "echo":
 		handlePing(rest, writer)
+	case "get":
+		handleGet(rest, writer)
 	default:
 		reply(writer, []byte("unknown command"))
 	}
@@ -53,4 +56,26 @@ func handleCommand(command string, writer io.Writer) {
 
 func handlePing(rest string, writer io.Writer) {
 	reply(writer, []byte(rest))
+}
+
+func handleGet(rest string, writer io.Writer) {
+	resp, err := http.Get(rest[:len(rest)-1])
+	if err != nil {
+		panic("Failed to Get: " + err.Error())
+	}
+
+	buf := make([]byte, httpGetReadChunkSize)
+
+	for {
+		n, err := resp.Body.Read(buf)
+		if err != nil && err != io.EOF {
+			panic("Failed to Read: " + err.Error())
+		}
+
+		reply(writer, buf[:n])
+		if err == io.EOF {
+			resp.Body.Close()
+			return
+		}
+	}
 }

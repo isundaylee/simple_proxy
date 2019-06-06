@@ -2,6 +2,9 @@ package server
 
 import (
 	"bytes"
+	"fmt"
+	"net"
+	"net/http"
 	"testing"
 )
 
@@ -46,6 +49,39 @@ func TestUnknownCommand(t *testing.T) {
 	HandleProtocol(input, &output)
 
 	if !bytes.Equal(output.Bytes(), []byte("unknown command")) {
+		t.Fatalf("Unexpected output: %s", output.Bytes())
+	}
+}
+
+type FixedReplyHTTPHandler struct {
+	reply string
+}
+
+func (handler FixedReplyHTTPHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	reply(writer, []byte(handler.reply))
+}
+
+func TestGetOK(t *testing.T) {
+	listener, err := net.Listen("tcp", ":0")
+	if err != nil {
+		panic("Failed to Listen: " + err.Error())
+	}
+
+	port := listener.Addr().(*net.TCPAddr).Port
+
+	go func() {
+		err := http.Serve(listener, FixedReplyHTTPHandler{"test-content"})
+		if err != nil {
+			panic("Failed to Serve: " + err.Error())
+		}
+	}()
+
+	input := bytes.NewBufferString(fmt.Sprintf("get http://localhost:%d\n", port))
+	output := bytes.Buffer{}
+
+	HandleProtocol(input, &output)
+
+	if !bytes.Equal(output.Bytes(), []byte("test-content")) {
 		t.Fatalf("Unexpected output: %s", output.Bytes())
 	}
 }
