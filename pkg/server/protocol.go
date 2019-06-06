@@ -94,7 +94,10 @@ func handleGet(rest string, writer io.Writer) bool {
 			return false
 		}
 
-		reply(writer, buf[:n])
+		if !reply(writer, buf[:n]) {
+			return false
+		}
+
 		if err == io.EOF {
 			resp.Body.Close()
 			return true
