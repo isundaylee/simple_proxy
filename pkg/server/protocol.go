@@ -23,7 +23,12 @@ func HandleProtocol(reader io.Reader, writer io.Writer) {
 			panic("Failed to ReadBytes: " + err.Error())
 		}
 
-		handleCommand(string(command), writer)
+		if command[len(command)-2] == '\r' {
+			command[len(command)-2] = '\n'
+			handleCommand(string(command[:len(command)-1]), writer)
+		} else {
+			handleCommand(string(command), writer)
+		}
 	}
 }
 

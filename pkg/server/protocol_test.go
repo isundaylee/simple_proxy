@@ -85,3 +85,14 @@ func TestGetOK(t *testing.T) {
 		t.Fatalf("Unexpected output: %s", output.Bytes())
 	}
 }
+
+func TestCrLfLineEnding(t *testing.T) {
+	input := bytes.NewBufferString("echo hello, world!\r\n")
+	output := bytes.Buffer{}
+
+	HandleProtocol(input, &output)
+
+	if !bytes.Equal(output.Bytes(), []byte("hello, world!\n")) {
+		t.Fatalf("Unexpected output: %s", output.Bytes())
+	}
+}
