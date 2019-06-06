@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-const httpGetReadChunkSize = 1024
+const httpGetReadChunkSize = 1024 * 1024
 
 // HandleProtocol handles the protocol part of a simple proxy connection. It
 // reads commands from reader, and writes output to writer.
