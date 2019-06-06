@@ -1,28 +1,29 @@
 package server
 
-import "io"
+import (
+	"bufio"
+	"io"
+)
 
 const readChunkSize = 128
 
 // HandleProtocol handles the protocol part of a simple proxy connection. It
 // reads commands from reader, and writes output to writer.
 func HandleProtocol(reader io.Reader, writer io.Writer) {
-	readBuf :=
-		make([]byte, readChunkSize)
+	bufReader := bufio.NewReader(reader)
 
 	for {
-		n, err := reader.Read(readBuf)
-		if err != nil && err != io.EOF {
-			panic("Failed to read: " + err.Error())
-		}
-
-		if n == 0 {
+		command, err := bufReader.ReadBytes('\n')
+		if err == io.EOF || command[len(command)-1] != '\n' {
 			return
 		}
-
-		_, err = writer.Write(readBuf[:n])
 		if err != nil {
-			panic("Failed to write: " + err.Error())
+			panic("Failed to ReadBytes: " + err.Error())
+		}
+
+		_, err = writer.Write(command)
+		if err != nil {
+			panic("Failed to Write: " + err.Error())
 		}
 	}
 }
